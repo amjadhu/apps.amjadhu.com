@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Apps - Amjad Hussain</title>
-  <meta name="description" content="A collection of apps and tools built by Amjad Hussain.">
+  <title>Projects - Amjad Hussain</title>
+  <meta name="description" content="Software and tools crafted by Amjad Hussain.">
   <meta name="author" content="Amjad Hussain">
   <link rel="canonical" href="https://apps.amjadhu.com/">
   <meta name="robots" content="index, follow">
@@ -12,13 +12,13 @@
 
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://apps.amjadhu.com/">
-  <meta property="og:title" content="Apps - Amjad Hussain">
-  <meta property="og:description" content="A collection of apps and tools built by Amjad Hussain.">
+  <meta property="og:title" content="Projects - Amjad Hussain">
+  <meta property="og:description" content="Software and tools crafted by Amjad Hussain.">
   <meta property="og:site_name" content="Amjad Hussain">
 
   <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Apps - Amjad Hussain">
-  <meta name="twitter:description" content="A collection of apps and tools built by Amjad Hussain.">
+  <meta name="twitter:title" content="Projects - Amjad Hussain">
+  <meta name="twitter:description" content="Software and tools crafted by Amjad Hussain.">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -33,8 +33,8 @@
   </header>
 
   <main>
-    <h1>Apps</h1>
-    <p class="subtitle">Things I've built</p>
+    <h1>Projects</h1>
+    <p class="subtitle">Software & tools I've crafted</p>
 
     <div class="grid">
 
@@ -80,41 +80,129 @@
     const canvas = document.getElementById('bg');
     const ctx = canvas.getContext('2d');
     let w, h;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
 
     function resize() {
-      w = canvas.width = window.innerWidth;
-      h = canvas.height = window.innerHeight;
+      w = window.innerWidth;
+      h = window.innerHeight;
+      canvas.width = w * dpr;
+      canvas.height = h * dpr;
+      canvas.style.width = w + 'px';
+      canvas.style.height = h + 'px';
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
     resize();
     window.addEventListener('resize', resize);
 
-    const orbs = Array.from({ length: 5 }, (_, i) => ({
-      x: Math.random() * w,
-      y: Math.random() * h,
-      r: 120 + Math.random() * 150,
-      dx: (Math.random() - 0.5) * 0.4,
-      dy: (Math.random() - 0.5) * 0.4,
-      hue: [235, 260, 210, 280, 195][i],
-      alpha: 0.08 + Math.random() * 0.06,
+    // Flowing mesh nodes
+    const cols = 8;
+    const rows = 6;
+    const nodes = [];
+    for (let i = 0; i < cols; i++) {
+      for (let j = 0; j < rows; j++) {
+        nodes.push({
+          baseX: (i / (cols - 1)) * 1.2 - 0.1,
+          baseY: (j / (rows - 1)) * 1.2 - 0.1,
+          phaseX: Math.random() * Math.PI * 2,
+          phaseY: Math.random() * Math.PI * 2,
+          speedX: 0.0003 + Math.random() * 0.0004,
+          speedY: 0.0002 + Math.random() * 0.0004,
+          ampX: 0.02 + Math.random() * 0.03,
+          ampY: 0.02 + Math.random() * 0.03
+        });
+      }
+    }
+
+    // Floating particles
+    const particles = Array.from({ length: 40 }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.0002,
+      vy: (Math.random() - 0.5) * 0.0002,
+      r: 1 + Math.random() * 1.5,
+      alpha: 0.15 + Math.random() * 0.25,
       phase: Math.random() * Math.PI * 2
     }));
 
+    // Gradient blobs (large, slow)
+    const blobs = [
+      { cx: 0.2, cy: 0.3, r: 0.35, hue: 240, sat: 60, speed: 0.0002, phase: 0 },
+      { cx: 0.8, cy: 0.2, r: 0.3, hue: 270, sat: 50, speed: 0.00025, phase: 1.5 },
+      { cx: 0.5, cy: 0.7, r: 0.4, hue: 220, sat: 55, speed: 0.00015, phase: 3 },
+      { cx: 0.1, cy: 0.8, r: 0.25, hue: 200, sat: 45, speed: 0.0003, phase: 4.5 },
+    ];
+
+    function getNodePos(node, t) {
+      return {
+        x: (node.baseX + Math.sin(t * node.speedX + node.phaseX) * node.ampX) * w,
+        y: (node.baseY + Math.sin(t * node.speedY + node.phaseY) * node.ampY) * h
+      };
+    }
+
     function draw(t) {
       ctx.clearRect(0, 0, w, h);
-      for (const orb of orbs) {
-        orb.x += orb.dx;
-        orb.y += orb.dy;
-        const pulse = Math.sin(t * 0.0005 + orb.phase) * 0.3 + 1;
-        if (orb.x < -orb.r) orb.x = w + orb.r;
-        if (orb.x > w + orb.r) orb.x = -orb.r;
-        if (orb.y < -orb.r) orb.y = h + orb.r;
-        if (orb.y > h + orb.r) orb.y = -orb.r;
-        const grad = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.r * pulse);
-        grad.addColorStop(0, `hsla(${orb.hue}, 70%, 60%, ${orb.alpha * pulse})`);
+
+      // Draw gradient blobs
+      for (const b of blobs) {
+        const ox = Math.sin(t * b.speed + b.phase) * 0.08;
+        const oy = Math.cos(t * b.speed * 0.7 + b.phase) * 0.06;
+        const cx = (b.cx + ox) * w;
+        const cy = (b.cy + oy) * h;
+        const r = b.r * Math.max(w, h);
+        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+        grad.addColorStop(0, `hsla(${b.hue}, ${b.sat}%, 55%, 0.07)`);
+        grad.addColorStop(0.5, `hsla(${b.hue}, ${b.sat}%, 45%, 0.03)`);
         grad.addColorStop(1, 'transparent');
         ctx.fillStyle = grad;
-        ctx.fillRect(orb.x - orb.r * pulse, orb.y - orb.r * pulse, orb.r * 2 * pulse, orb.r * 2 * pulse);
+        ctx.fillRect(0, 0, w, h);
       }
+
+      // Draw mesh connections
+      const positions = nodes.map(n => getNodePos(n, t));
+      ctx.lineWidth = 0.5;
+
+      for (let i = 0; i < positions.length; i++) {
+        for (let j = i + 1; j < positions.length; j++) {
+          const dx = positions[i].x - positions[j].x;
+          const dy = positions[i].y - positions[j].y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const maxDist = Math.max(w, h) * 0.22;
+          if (dist < maxDist) {
+            const alpha = (1 - dist / maxDist) * 0.06;
+            ctx.strokeStyle = `rgba(140, 160, 255, ${alpha})`;
+            ctx.beginPath();
+            ctx.moveTo(positions[i].x, positions[i].y);
+            ctx.lineTo(positions[j].x, positions[j].y);
+            ctx.stroke();
+          }
+        }
+      }
+
+      // Draw mesh nodes
+      for (const pos of positions) {
+        const glow = Math.sin(t * 0.001 + pos.x * 0.01) * 0.5 + 0.5;
+        ctx.fillStyle = `rgba(140, 160, 255, ${0.04 + glow * 0.06})`;
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, 2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // Draw and update particles
+      for (const p of particles) {
+        p.x += p.vx;
+        p.y += p.vy;
+        if (p.x < -0.05) p.x = 1.05;
+        if (p.x > 1.05) p.x = -0.05;
+        if (p.y < -0.05) p.y = 1.05;
+        if (p.y > 1.05) p.y = -0.05;
+
+        const twinkle = Math.sin(t * 0.002 + p.phase) * 0.3 + 0.7;
+        ctx.fillStyle = `rgba(200, 210, 255, ${p.alpha * twinkle})`;
+        ctx.beginPath();
+        ctx.arc(p.x * w, p.y * h, p.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
       requestAnimationFrame(draw);
     }
     requestAnimationFrame(draw);
