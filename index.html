@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apps - Amjad Hussain</title>
+  <meta name="description" content="A collection of apps and tools built by Amjad Hussain.">
+  <meta name="author" content="Amjad Hussain">
+  <link rel="canonical" href="https://apps.amjadhu.com/">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://apps.amjadhu.com/">
+  <meta property="og:title" content="Apps - Amjad Hussain">
+  <meta property="og:description" content="A collection of apps and tools built by Amjad Hussain.">
+  <meta property="og:site_name" content="Amjad Hussain">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Apps - Amjad Hussain">
+  <meta name="twitter:description" content="A collection of apps and tools built by Amjad Hussain.">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <canvas id="bg" aria-hidden="true"></canvas>
+
+  <header>
+    <a href="https://amjadhu.com" class="back-link">&larr; amjadhu.com</a>
+  </header>
+
+  <main>
+    <h1>Apps</h1>
+    <p class="subtitle">Things I've built</p>
+
+    <div class="grid">
+
+      <a href="https://amjadhu.github.io/the-commission/" target="_blank" rel="noopener noreferrer" class="card">
+        <div class="card-icon">🏈</div>
+        <h2>The Commission</h2>
+        <p>Seahawks fan hub &mdash; news feed, hot takes, and reactions for the crew.</p>
+        <span class="card-tag">Web App</span>
+      </a>
+
+      <a href="https://ai-terminal-one.vercel.app" target="_blank" rel="noopener noreferrer" class="card">
+        <div class="card-icon">📊</div>
+        <h2>AI Terminal</h2>
+        <p>Modern Bloomberg terminal-style dashboard for personal use.</p>
+        <span class="card-tag">Web App</span>
+      </a>
+
+      <a href="https://amjadhu.github.io/college-explorer/" target="_blank" rel="noopener noreferrer" class="card">
+        <div class="card-icon">🎓</div>
+        <h2>College Explorer</h2>
+        <p>Interactive tool for exploring and comparing colleges.</p>
+        <span class="card-tag">Web App</span>
+      </a>
+
+      <a href="https://github.com/amjadhu/vantage" target="_blank" rel="noopener noreferrer" class="card">
+        <div class="card-icon">🔍</div>
+        <h2>Vantage</h2>
+        <p>AI-powered intelligence dashboard that curates industry news, tech trends, and cybersecurity developments.</p>
+        <span class="card-tag">Next.js &middot; Claude</span>
+      </a>
+
+      <a href="https://github.com/amjadhu/syslens" target="_blank" rel="noopener noreferrer" class="card">
+        <div class="card-icon">🖥️</div>
+        <h2>Syslens</h2>
+        <p>Cross-platform CLI for detailed hardware and software system information.</p>
+        <span class="card-tag">CLI Tool &middot; Python</span>
+      </a>
+
+    </div>
+  </main>
+
+  <script>
+    const canvas = document.getElementById('bg');
+    const ctx = canvas.getContext('2d');
+    let w, h;
+
+    function resize() {
+      w = canvas.width = window.innerWidth;
+      h = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    const orbs = Array.from({ length: 5 }, (_, i) => ({
+      x: Math.random() * w,
+      y: Math.random() * h,
+      r: 120 + Math.random() * 150,
+      dx: (Math.random() - 0.5) * 0.4,
+      dy: (Math.random() - 0.5) * 0.4,
+      hue: [235, 260, 210, 280, 195][i],
+      alpha: 0.08 + Math.random() * 0.06,
+      phase: Math.random() * Math.PI * 2
+    }));
+
+    function draw(t) {
+      ctx.clearRect(0, 0, w, h);
+      for (const orb of orbs) {
+        orb.x += orb.dx;
+        orb.y += orb.dy;
+        const pulse = Math.sin(t * 0.0005 + orb.phase) * 0.3 + 1;
+        if (orb.x < -orb.r) orb.x = w + orb.r;
+        if (orb.x > w + orb.r) orb.x = -orb.r;
+        if (orb.y < -orb.r) orb.y = h + orb.r;
+        if (orb.y > h + orb.r) orb.y = -orb.r;
+        const grad = ctx.createRadialGradient(orb.x, orb.y, 0, orb.x, orb.y, orb.r * pulse);
+        grad.addColorStop(0, `hsla(${orb.hue}, 70%, 60%, ${orb.alpha * pulse})`);
+        grad.addColorStop(1, 'transparent');
+        ctx.fillStyle = grad;
+        ctx.fillRect(orb.x - orb.r * pulse, orb.y - orb.r * pulse, orb.r * 2 * pulse, orb.r * 2 * pulse);
+      }
+      requestAnimationFrame(draw);
+    }
+    requestAnimationFrame(draw);
+  </script>
+</body>
+</html>
