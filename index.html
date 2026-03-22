@@ -113,130 +113,106 @@
     resize();
     window.addEventListener('resize', resize);
 
-    // Scalar field sources — moving peaks and valleys that shape the terrain
-    const sources = [
-      { cx: 0.3, cy: 0.35, amp: 1.0, freq: 0.006, phase: 0, drift: 0.00008 },
-      { cx: 0.7, cy: 0.3, amp: 0.8, freq: 0.007, phase: 1.8, drift: 0.00006 },
-      { cx: 0.5, cy: 0.7, amp: 0.9, freq: 0.005, phase: 3.6, drift: 0.0001 },
-      { cx: 0.2, cy: 0.75, amp: 0.6, freq: 0.008, phase: 5.0, drift: 0.00007 },
-      { cx: 0.8, cy: 0.65, amp: 0.7, freq: 0.006, phase: 2.5, drift: 0.00009 },
+    // Glass orbs — large, slow, layered with depth
+    const orbs = [
+      { cx: 0.18, cy: 0.25, r: 0.18, hue: 230, sat: 40, phase: 0, speed: 0.00006, driftX: 0.06, driftY: 0.05, depth: 0.6 },
+      { cx: 0.75, cy: 0.20, r: 0.22, hue: 260, sat: 35, phase: 1.5, speed: 0.00005, driftX: 0.07, driftY: 0.04, depth: 0.8 },
+      { cx: 0.55, cy: 0.65, r: 0.26, hue: 215, sat: 38, phase: 3.0, speed: 0.00004, driftX: 0.05, driftY: 0.06, depth: 1.0 },
+      { cx: 0.30, cy: 0.72, r: 0.15, hue: 245, sat: 32, phase: 4.5, speed: 0.00007, driftX: 0.04, driftY: 0.05, depth: 0.5 },
+      { cx: 0.85, cy: 0.55, r: 0.13, hue: 200, sat: 36, phase: 2.2, speed: 0.00008, driftX: 0.05, driftY: 0.03, depth: 0.4 },
     ];
 
-    // Compute the scalar field value at a point
-    function field(x, y, t) {
-      let v = 0;
-      for (const s of sources) {
-        const sx = (s.cx + Math.sin(t * s.drift + s.phase) * 0.15) * w;
-        const sy = (s.cy + Math.cos(t * s.drift * 0.8 + s.phase) * 0.12) * h;
-        const dx = x - sx;
-        const dy = y - sy;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        v += s.amp * Math.cos(dist * s.freq + t * 0.0004 + s.phase);
-      }
-      // Add a slow global wave for extra movement
-      v += 0.3 * Math.sin(x * 0.003 + t * 0.0002) * Math.cos(y * 0.004 - t * 0.00015);
-      return v;
-    }
+    function drawOrb(o, t) {
+      const scale = Math.min(w, h);
+      const x = (o.cx + Math.sin(t * o.speed + o.phase) * o.driftX) * w;
+      const y = (o.cy + Math.cos(t * o.speed * 0.8 + o.phase + 0.5) * o.driftY) * h;
+      const r = o.r * scale;
 
-    // Marching squares to extract contour lines
-    // Returns an array of line segments [{x1,y1,x2,y2}, ...]
-    function contourLines(threshold, step, t) {
-      const segments = [];
-      for (let gx = 0; gx < w; gx += step) {
-        for (let gy = 0; gy < h; gy += step) {
-          const x0 = gx, y0 = gy;
-          const x1 = gx + step, y1 = gy + step;
+      // Breathing — slow, subtle size pulse
+      const breath = 1 + Math.sin(t * 0.0003 + o.phase) * 0.03;
+      const br = r * breath;
 
-          // Sample corners
-          const tl = field(x0, y0, t) - threshold;
-          const tr = field(x1, y0, t) - threshold;
-          const br = field(x1, y1, t) - threshold;
-          const bl = field(x0, y1, t) - threshold;
+      // --- Outer glow (soft ambient light) ---
+      const glow = ctx.createRadialGradient(x, y, br * 0.5, x, y, br * 1.8);
+      glow.addColorStop(0, `hsla(${o.hue}, ${o.sat}%, 55%, ${0.04 * o.depth})`);
+      glow.addColorStop(0.5, `hsla(${o.hue}, ${o.sat - 10}%, 45%, ${0.015 * o.depth})`);
+      glow.addColorStop(1, 'transparent');
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(x, y, br * 1.8, 0, Math.PI * 2);
+      ctx.fill();
 
-          // Marching squares case index
-          let idx = 0;
-          if (tl > 0) idx |= 1;
-          if (tr > 0) idx |= 2;
-          if (br > 0) idx |= 4;
-          if (bl > 0) idx |= 8;
+      // --- Main glass body ---
+      // Outer edge: subtle border ring
+      const body = ctx.createRadialGradient(x, y, br * 0.1, x, y, br);
+      body.addColorStop(0, `hsla(${o.hue}, ${o.sat + 5}%, 60%, ${0.06 * o.depth})`);
+      body.addColorStop(0.4, `hsla(${o.hue}, ${o.sat}%, 50%, ${0.04 * o.depth})`);
+      body.addColorStop(0.75, `hsla(${o.hue}, ${o.sat - 5}%, 45%, ${0.025 * o.depth})`);
+      body.addColorStop(0.92, `hsla(${o.hue}, ${o.sat}%, 50%, ${0.04 * o.depth})`);
+      body.addColorStop(1, `hsla(${o.hue}, ${o.sat}%, 40%, ${0.01 * o.depth})`);
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      ctx.arc(x, y, br, 0, Math.PI * 2);
+      ctx.fill();
 
-          if (idx === 0 || idx === 15) continue;
+      // --- Inner glass gradient (frosted depth) ---
+      const inner = ctx.createRadialGradient(
+        x - br * 0.15, y - br * 0.15, br * 0.05,
+        x, y, br * 0.85
+      );
+      inner.addColorStop(0, `hsla(${o.hue + 10}, ${o.sat + 10}%, 70%, ${0.05 * o.depth})`);
+      inner.addColorStop(0.5, `hsla(${o.hue}, ${o.sat}%, 55%, ${0.02 * o.depth})`);
+      inner.addColorStop(1, 'transparent');
+      ctx.fillStyle = inner;
+      ctx.beginPath();
+      ctx.arc(x, y, br * 0.85, 0, Math.PI * 2);
+      ctx.fill();
 
-          // Interpolation helpers
-          const lerp = (a, b, va, vb) => a + (b - a) * (-va / (vb - va));
+      // --- Specular highlight (top-left catch light) ---
+      const hlX = x - br * 0.28;
+      const hlY = y - br * 0.28;
+      const hlR = br * 0.4;
+      const highlight = ctx.createRadialGradient(hlX, hlY, 0, hlX, hlY, hlR);
+      highlight.addColorStop(0, `hsla(0, 0%, 100%, ${0.12 * o.depth})`);
+      highlight.addColorStop(0.3, `hsla(0, 0%, 100%, ${0.04 * o.depth})`);
+      highlight.addColorStop(1, 'transparent');
+      ctx.fillStyle = highlight;
+      ctx.beginPath();
+      ctx.arc(hlX, hlY, hlR, 0, Math.PI * 2);
+      ctx.fill();
 
-          const top = { x: lerp(x0, x1, tl, tr), y: y0 };
-          const right = { x: x1, y: lerp(y0, y1, tr, br) };
-          const bottom = { x: lerp(x0, x1, bl, br), y: y1 };
-          const left = { x: x0, y: lerp(y0, y1, tl, bl) };
+      // --- Secondary highlight (smaller, sharper) ---
+      const hl2X = x - br * 0.2;
+      const hl2Y = y - br * 0.22;
+      const hl2R = br * 0.12;
+      const hl2 = ctx.createRadialGradient(hl2X, hl2Y, 0, hl2X, hl2Y, hl2R);
+      hl2.addColorStop(0, `hsla(0, 0%, 100%, ${0.2 * o.depth})`);
+      hl2.addColorStop(1, 'transparent');
+      ctx.fillStyle = hl2;
+      ctx.beginPath();
+      ctx.arc(hl2X, hl2Y, hl2R, 0, Math.PI * 2);
+      ctx.fill();
 
-          const addSeg = (a, b) => segments.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y });
-
-          switch (idx) {
-            case 1: addSeg(top, left); break;
-            case 2: addSeg(top, right); break;
-            case 3: addSeg(left, right); break;
-            case 4: addSeg(right, bottom); break;
-            case 5: addSeg(top, right); addSeg(bottom, left); break;
-            case 6: addSeg(top, bottom); break;
-            case 7: addSeg(left, bottom); break;
-            case 8: addSeg(left, bottom); break;
-            case 9: addSeg(top, bottom); break;
-            case 10: addSeg(top, left); addSeg(right, bottom); break;
-            case 11: addSeg(right, bottom); break;
-            case 12: addSeg(left, right); break;
-            case 13: addSeg(top, right); break;
-            case 14: addSeg(top, left); break;
-          }
-        }
-      }
-      return segments;
+      // --- Rim light (bottom-right edge catch) ---
+      const rimX = x + br * 0.3;
+      const rimY = y + br * 0.3;
+      const rimR = br * 0.5;
+      const rim = ctx.createRadialGradient(rimX, rimY, br * 0.2, rimX, rimY, rimR);
+      rim.addColorStop(0, `hsla(${o.hue + 20}, ${o.sat}%, 65%, ${0.035 * o.depth})`);
+      rim.addColorStop(1, 'transparent');
+      ctx.fillStyle = rim;
+      ctx.beginPath();
+      ctx.arc(rimX, rimY, rimR, 0, Math.PI * 2);
+      ctx.fill();
     }
 
     function draw(t) {
       ctx.clearRect(0, 0, w, h);
 
-      // Subtle ambient glow behind contours
-      for (let i = 0; i < 3; i++) {
-        const s = sources[i];
-        const sx = (s.cx + Math.sin(t * s.drift + s.phase) * 0.15) * w;
-        const sy = (s.cy + Math.cos(t * s.drift * 0.8 + s.phase) * 0.12) * h;
-        const r = Math.max(w, h) * 0.35;
-        const grad = ctx.createRadialGradient(sx, sy, 0, sx, sy, r);
-        const hue = [225, 255, 200][i];
-        grad.addColorStop(0, `hsla(${hue}, 45%, 45%, 0.05)`);
-        grad.addColorStop(0.6, `hsla(${hue}, 35%, 35%, 0.015)`);
-        grad.addColorStop(1, 'transparent');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, w, h);
-      }
-
-      // Draw contour levels
-      const step = Math.max(12, Math.floor(Math.min(w, h) / 80));
-      const levels = 12;
-      const range = 2.4;
-
-      for (let i = 0; i < levels; i++) {
-        const threshold = -range / 2 + (range / levels) * i;
-
-        // Vary opacity: brighter near center thresholds, dimmer at extremes
-        const dist = Math.abs(threshold) / (range / 2);
-        const alpha = 0.04 + (1 - dist) * 0.10;
-
-        // Slight hue shift per level
-        const hue = 220 + (i / levels) * 40;
-        const lightness = 50 + (1 - dist) * 15;
-
-        ctx.strokeStyle = `hsla(${hue}, 40%, ${lightness}%, ${alpha})`;
-        ctx.lineWidth = 0.8 + (1 - dist) * 0.6;
-
-        const segs = contourLines(threshold, step, t);
-        ctx.beginPath();
-        for (const s of segs) {
-          ctx.moveTo(s.x1, s.y1);
-          ctx.lineTo(s.x2, s.y2);
-        }
-        ctx.stroke();
+      // Sort by depth so farther orbs render first
+      const sorted = [...orbs].sort((a, b) => a.depth - b.depth);
+      for (const o of sorted) {
+        drawOrb(o, t);
       }
 
       requestAnimationFrame(draw);
