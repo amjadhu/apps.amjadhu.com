@@ -25,7 +25,7 @@ Apps gallery for Amjad Hussain hosted at apps.amjadhu.com. Static site deployed 
 |-----|-----|---------|
 | The Commission | https://amjadhu.github.io/the-commission/ | GitHub Pages |
 | AI Terminal | https://ai-terminal-one.vercel.app | Vercel |
-| College Explorer | https://amjadhu.github.io/college-explorer/ | GitHub Pages |
+| College Compass | https://colleges.amjadhu.com | Vercel |
 | Vantage | https://github.com/amjadhu/vantage | Vercel (repo link for now) |
 | Syslens | https://github.com/amjadhu/syslens | CLI tool (repo link) |
 
